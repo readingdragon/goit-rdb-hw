@@ -1,0 +1,152 @@
+-- 1
+-- a)
+create schema LibraryManagement;
+
+-- b)
+create table authors (
+author_id int auto_increment primary key,
+author_name varchar(25)
+);
+
+-- c)
+create table genres (
+genre_id int auto_increment primary key,
+genre_name varchar(45)
+);
+
+-- d)
+create table books (
+book_id int auto_increment primary key,
+title varchar(255),
+publication_year year,
+author_id int,
+foreign key (author_id) references authors(author_id),
+genre_id int,
+foreign key (genre_id) references genres(genre_id)
+);
+
+-- e)
+create table users (
+user_id int auto_increment primary key,
+username varchar (100),
+email varchar(100)
+);
+
+-- f)
+create table borrowed_books (
+ borrow_id int auto_increment primary key,
+ book_id int,
+ foreign key (book_id) references books(book_id),
+ user_id int,
+ foreign key (user_id) references users(user_id),
+ borrow_date date,
+ return_date date
+ );
+
+-- 2
+insert into authors (author_id, author_name) values (1, "Shevchenko");
+insert into authors (author_id, author_name) values (2, "Franko");
+
+insert into books (book_id, title, publication_year, author_id, genre_id) values (1, 'Kobzar', 1940, 1, 1);
+insert into books (book_id, title, publication_year, author_id, genre_id) values (2, 'Motherland', 1905, 2, 2);
+
+insert into borrowed_books (borrow_id, book_id, user_id, borrow_date, return_date) values (6, 2, 1, '1970-10-10', '2006-10-10');
+
+insert into genres (genre_id, genre_name) values (1, 'poetry');
+insert into genres (genre_id, genre_name) values (2, 'story');
+
+insert into users (user_id, username, email) values (1, "Thor", 'valhallawaiting@google.com');
+insert into users (user_id, username, email) values (2, "Hulk", 'moscowonfire@google.com');
+
+--3
+
+use mydb;
+
+select order_details.*, orders.*, customers.*,  products.*, categories.*, employees.*, shippers.*, suppliers.*
+	from order_details
+		inner join orders on order_details.order_id = orders.id
+        inner join customers on orders.customer_id = customers.id
+        inner join products on order_details.product_id = products.id
+        inner join categories on products.category_id = categories.id
+        inner join employees on orders.employee_id = employees.employee_id
+        inner join shippers on orders.shipper_id = shippers.id
+        inner join suppliers on products.supplier_id = suppliers.id;
+
+-- 4_1
+select count(*) as total_rows
+	from order_details
+		inner join orders on order_details.order_id = orders.id
+        inner join customers on orders.customer_id = customers.id
+        inner join products on order_details.product_id = products.id
+        inner join categories on products.category_id = categories.id
+        inner join employees on orders.employee_id = employees.employee_id
+        inner join shippers on orders.shipper_id = shippers.id
+        inner join suppliers on products.supplier_id = suppliers.id;
+-- 4_2
+select count(*) as total_rows
+	from order_details
+		inner join orders on order_details.order_id = orders.id
+        left join customers on orders.customer_id = customers.id
+        inner join products on order_details.product_id = products.id
+        inner join categories on products.category_id = categories.id
+        right join employees on orders.employee_id = employees.employee_id
+        right join shippers on orders.shipper_id = shippers.id
+        inner join suppliers on products.supplier_id = suppliers.id;
+
+-- Заміна INNER JOIN на LEFT JOIN дозволяє включити всі рядки з лівої таблиці, навіть якщо у правій таблиці немає відповідного запису. Це може збільшити кількість результатів або залишити її незмінною, якщо всі відповідності є. Оскільки orders та customers мають пропущені відповідності, LEFT JOIN все одно покаже ці рядки з NULL-значеннями. Тому total_rows збільшиться.
+
+-- 4_3
+select order_details.*, orders.*, customers.*,  products.*, categories.*, employees.*, shippers.*, suppliers.*
+	from order_details
+		inner join orders on order_details.order_id = orders.id
+        inner join customers on orders.customer_id = customers.id
+        inner join products on order_details.product_id = products.id
+        inner join categories on products.category_id = categories.id
+        inner join employees on orders.employee_id = employees.employee_id
+        inner join shippers on orders.shipper_id = shippers.id
+        inner join suppliers on products.supplier_id = suppliers.id
+	where orders.employee_id > 3 and orders.employee_id <= 10;
+
+-- 4_4
+select categories.name as category_name,
+	count(*) as total_rows_in_group,
+    avg(order_details.quantity) as average_quantity
+from order_details
+	inner join products on order_details.product_id = products.id
+    inner join categories on products.category_id = categories.id
+group by categories.name;
+
+-- 4_5
+select categories.name as category_name,
+	count(*) as total_rows_in_group,
+    avg(order_details.quantity) as average_quantity
+from order_details
+	inner join products on order_details.product_id = products.id
+    inner join categories on products.category_id = categories.id
+group by categories.name
+having avg(order_details.quantity) > 21;
+
+-- 4_6
+select categories.name as category_name,
+	count(*) as total_rows_in_group,
+    avg(order_details.quantity) as average_quantity
+from order_details
+	inner join products on order_details.product_id = products.id
+    inner join categories on products.category_id = categories.id
+group by categories.name
+having avg(order_details.quantity) > 21
+order by total_rows_in_group desc
+
+-- 4_7
+select categories.name as category_name,
+	count(*) as total_rows_in_group,
+    avg(order_details.quantity) as average_quantity
+from order_details
+	inner join products on order_details.product_id = products.id
+    inner join categories on products.category_id = categories.id
+group by categories.name
+having avg(order_details.quantity) > 21
+order by total_rows_in_group desc
+limit 4 offset 1;
+
+
