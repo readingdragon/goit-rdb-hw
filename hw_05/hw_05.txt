@@ -1,0 +1,35 @@
+use mydb;
+-- 1
+select *, 
+(select customer_id from orders where id = order_details.order_id) as customer_id
+from order_details;
+
+-- 2 
+select * from order_details
+where order_id in (select id from orders where shipper_id = 3);
+
+-- 3
+select order_id, avg(quantity) as avg_quantity
+from (select * from order_details where quantity > 10) as filtered_data
+group by order_id;
+
+-- 4
+with temp as (select * from order_details where quantity > 10)
+select order_id, avg(quantity) as avg_quantity
+from temp
+group by order_id;
+
+-- 5
+drop function if exists division_func;
+delimiter //
+create function division_func(x float, y float)
+returns float
+deterministic
+begin
+	return x / y;
+end;
+//
+delimiter ;
+
+select quantity, division_func(quantity, 6) as divided_quantity
+from order_details;
