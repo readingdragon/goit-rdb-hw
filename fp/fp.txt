@@ -1,0 +1,96 @@
+-- 1
+drop schema if exists `pandemic`;
+
+create schema if not exists `pandemic`;
+
+use pandemic;
+
+select * from infectious_cases;
+
+select count(*) from infectious_cases;
+
+-- 2
+select max(char_length(Entity)) as max_chars from infectious_cases;
+
+create table countries(
+country_id int auto_increment primary key,
+country varchar(35),
+code varchar(10)
+);
+
+insert into countries(country, code)
+select distinct Entity, Code from infectious_cases;
+
+select * from countries;
+
+create table infectious_cases_normalized as
+select * from infectious_cases;
+
+select * from infectious_cases_normalized;
+
+alter table infectious_cases_normalized
+add column id int auto_increment primary key first;
+
+alter table infectious_cases_normalized
+add column country_id int,
+add constraint fk_country foreign key(country_id) references countries(country_id);
+
+update infectious_cases_normalized
+set country_id = (
+	select country_id from countries where infectious_cases_normalized.Entity = countries.country);
+
+alter table infectious_cases_normalized
+drop column Entity,
+drop column Code;
+
+-- select count(*) from infectious_cases_normalized;
+
+-- 3
+select 
+	country_id, 
+	avg(Number_rabies) as avg_rabies, 
+    min(Number_rabies) as min_rabies, 
+    max(Number_rabies) as max_rabies,
+    sum(Number_rabies) as rabies_sum
+from infectious_cases_normalized
+where Number_rabies != ''
+group by country_id
+order by avg_rabies desc
+limit 10;
+
+-- 4
+alter table infectious_cases_normalized
+add column updated_date date,
+add column cur_date date,
+add column years_diff int;
+
+update infectious_cases_normalized
+set
+	updated_date = (select makedate(infectious_cases_normalized.Year, 1)),
+	cur_date = curdate(),
+    years_diff = (select timestampdiff(year, updated_date, cur_date));
+
+alter table infectious_cases_normalized
+modify column updated_date date after Year,
+modify column cur_date date after updated_date,
+modify column years_diff int after cur_date;
+
+-- 5
+drop function if exists culc_year_diff
+delimiter //
+create function culc_year_diff(some_date int)
+returns int
+
+deterministic
+no sql
+begin
+	declare year_diff int;
+    set year_diff = timestampdiff(year, makedate(some_date, 1), curdate());
+    return year_diff;
+end
+//
+delimiter ;
+
+select Year, culc_year_diff(Year) as years_diff from infectious_cases_normalized;
+
+-- select * from infectious_cases_normalized;
